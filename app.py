@@ -18,7 +18,7 @@ except Exception as e:
 
 # Seleccionar base de datos si la conexión fue exitosa
 if client:
-    db = client.get_default_database()
+    db = client["MainDB"]  # Usa el nombre exacto de tu base de datos en MongoDB Atlas
 
 # Crear carpeta para uploads si no existe
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

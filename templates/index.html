@@ -77,5 +77,20 @@
     </table>
 {% endif %}
 
+{% if resumen %}
+<h3>Resumen del procesamiento</h3>
+<table border="1" style="margin-top: 10px;">
+    <tr>
+        <th>Registros insertados</th>
+        <th>Registros duplicados ignorados</th>
+    </tr>
+    <tr>
+        <td>{{ resumen.insertados }}</td>
+        <td>{{ resumen.duplicados }}</td>
+    </tr>
+</table>
+{% endif %}
+
+
 </body>
 </html>
