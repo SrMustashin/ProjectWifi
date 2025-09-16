@@ -1,30 +1,21 @@
-from flask import Flask
+from flask import Flask, redirect, url_for
 from routes.upload_routes import upload_bp
-from pymongo import MongoClient
 from config import Config
 import os
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Conectar a MongoDB Atlas
-try:
-    client = MongoClient(Config.MONGO_URI)
-    client.admin.command('ping')  # Verifica conexión
-    print("✅ Conexión exitosa a MongoDB Atlas")
-except Exception as e:
-    print("❌ Error al conectar a MongoDB:", e)
-    client = None
-
-# Seleccionar base de datos si la conexión fue exitosa
-if client:
-    db = client["MainDB"]  # Usa el nombre exacto de tu base de datos en MongoDB Atlas
-
 # Crear carpeta para uploads si no existe
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Registrar rutas
 app.register_blueprint(upload_bp)
+
+# Ruta principal para redirigir a /upload
+@app.route("/")
+def index():
+    return redirect(url_for("upload.upload_file"))
 
 # Ejecutar la app
 if __name__ == '__main__':

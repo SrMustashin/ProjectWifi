@@ -2,95 +2,120 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Pagos - iWisp</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-        .error { color: red; }
-        .success { color: green; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Pagos iWisp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
 
-<h1>Subir archivo Excel para registrar pagos</h1>
+    <!-- Header -->
+    <header class="w-full max-w-6xl text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Registro de Pagos iWisp</h1>
+        <p class="text-gray-500 mt-2">Sube tu archivo Excel y procesa los pagos automáticamente</p>
+    </header>
 
-<form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".xlsx" required>
-    <button type="submit">Subir</button>
-</form>
+    <!-- Mensajes de flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="w-full max-w-6xl mb-6">
+          {% for category, message in messages %}
+            <div class="mb-2 p-3 rounded {{ 'bg-red-100 text-red-700' if category=='error' else 'bg-green-100 text-green-700' }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul>
-    {% for message in messages %}
-      <li class="error">{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+    <!-- Subir archivo -->
+    <form action="{{ url_for('upload.upload_file') }}" method="POST" enctype="multipart/form-data" class="w-full max-w-4xl bg-white p-6 rounded shadow-md mb-8">
+        <label class="block mb-2 font-medium text-gray-700">Selecciona tu archivo Excel</label>
+        <input type="file" name="file" class="block w-full text-gray-700 border rounded p-2 mb-4" required>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Subir y ver vista previa</button>
+    </form>
 
-{% if preview %}
-
-    {% if datos_cliente %}
-    <h3>Información del Cliente</h3>
-    <pre>{{ datos_cliente | tojson(indent=2) }}</pre>
+    <!-- Vista previa -->
+    {% if registros %}
+    <div class="w-full max-w-6xl bg-white p-6 rounded shadow-md mb-8 overflow-x-auto">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Vista Previa de Registros</h2>
+        <form action="{{ url_for('upload.procesar') }}" method="POST">
+            <table class="w-full border border-gray-200 text-left text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="p-2 border">Seleccionar</th>
+                        <th class="p-2 border">ID Cliente</th>
+                        <th class="p-2 border">Teléfono</th>
+                        <th class="p-2 border">Transacción</th>
+                        <th class="p-2 border">Monto</th>
+                        <th class="p-2 border">Fecha Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registros %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-2 border text-center">
+                            <input type="checkbox" name="seleccionados" value="{{ reg.idcliente }}|{{ reg.telefono }}|{{ reg.transaccion }}|{{ reg.monto }}|{{ reg.fecha_pago }}" class="w-4 h-4">
+                        </td>
+                        <td class="p-2 border">{{ reg.idcliente }}</td>
+                        <td class="p-2 border">{{ reg.telefono }}</td>
+                        <td class="p-2 border">{{ reg.transaccion }}</td>
+                        <td class="p-2 border">{{ reg.monto }}</td>
+                        <td class="p-2 border">{{ reg.fecha_pago }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" class="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">Registrar Pagos Seleccionados</button>
+        </form>
+    </div>
     {% endif %}
 
-    <h2>Vista previa del archivo:</h2>
-    <table>
-        <tr>
-            <th>ID Cliente</th>
-            <th>Teléfono</th>
-            <th>Transacción</th>
-            <th>Monto</th>
-            <th>Fecha de Pago</th>
-        </tr>
-        {% for row in preview %}
-        <tr>
-            <td>{{ row.idcliente }}</td>
-            <td>{{ row.telefono }}</td>
-            <td>{{ row.transaccion }}</td>
-            <td>{{ row.monto }}</td>
-            <td>{{ row.fecha_pago }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-{% endif %}
+    <!-- Resultados -->
+    {% if resultados %}
+    <div class="w-full max-w-6xl bg-white p-6 rounded shadow-md mb-8 overflow-x-auto">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Resultado de la actualización en iWisp</h2>
+        <table class="w-full border border-gray-200 text-left text-sm">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-2 border">ID Cliente</th>
+                    <th class="p-2 border">Status</th>
+                    <th class="p-2 border">Mensaje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in resultados %}
+                <tr class="hover:bg-gray-50">
+                    <td class="p-2 border">{{ res.idcliente }}</td>
+                    <td class="p-2 border font-medium {{ 'text-green-600' if res.status==200 else 'text-red-600' }}">{{ res.status }}</td>
+                    <td class="p-2 border">{{ res.mensaje }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-{% if resultados %}
-    <h2>Resultado de la actualización en iWisp</h2>
-    <table>
-        <tr>
-            <th>ID Cliente</th>
-            <th>Status</th>
-            <th>Mensaje</th>
-        </tr>
-        {% for res in resultados %}
-        <tr>
-            <td>{{ res.idcliente }}</td>
-            <td class="{{ 'success' if res.status == 200 else 'error' }}">{{ res.status }}</td>
-            <td>{{ res.mensaje }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-{% endif %}
+    <!-- Resumen -->
+    {% if resumen %}
+    <div class="w-full max-w-4xl bg-white p-6 rounded shadow-md mb-8 text-center">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Resumen del procesamiento</h3>
+        <div class="flex justify-around text-gray-700">
+            <div>
+                <p class="font-bold text-green-600">{{ resumen.insertados }}</p>
+                <p>Pagos exitosos</p>
+            </div>
+            <div>
+                <p class="font-bold text-red-600">{{ resumen.errores }}</p>
+                <p>Pagos con error</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
-{% if resumen %}
-<h3>Resumen del procesamiento</h3>
-<table border="1" style="margin-top: 10px;">
-    <tr>
-        <th>Registros insertados</th>
-        <th>Registros duplicados ignorados</th>
-    </tr>
-    <tr>
-        <td>{{ resumen.insertados }}</td>
-        <td>{{ resumen.duplicados }}</td>
-    </tr>
-</table>
-{% endif %}
-
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl text-center py-6 text-gray-500">
+        &copy; 2025 iWisp Manager. Todos los derechos reservados.
+    </footer>
 
 </body>
 </html>

@@ -1,66 +1,107 @@
-import os
-from flask import Blueprint, request, render_template, redirect, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.excel import procesar_excel
 from core.payments import enviar_pago
-from core.db import get_mongo_db
 
-upload_bp = Blueprint('upload', __name__)
+upload_bp = Blueprint("upload", __name__)
 
-@upload_bp.route('/')
+# Página principal
+@upload_bp.route("/")
 def index():
-    return render_template('index.html', preview=None, resultados=None)
+    return render_template("index.html")
 
-@upload_bp.route('/upload', methods=['POST'])
+# Subida de Excel y vista previa
+@upload_bp.route("/upload", methods=["GET", "POST"])
 def upload_file():
-    if 'file' not in request.files:
-        flash('No se envió ningún archivo')
-        return redirect('/')
+    if request.method == "POST":
+        if "file" not in request.files:
+            flash("No se envió ningún archivo", "error")
+            return redirect(url_for("upload.index"))
 
-    file = request.files['file']
-    if file.filename == '':
-        flash('Nombre de archivo vacío')
-        return redirect('/')
+        file = request.files["file"]
+        if file.filename == "":
+            flash("El archivo no tiene nombre", "error")
+            return redirect(url_for("upload.index"))
 
-    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(filepath)
+        try:
+            registros = procesar_excel(file)
 
+            if registros.empty:
+                flash("No se encontraron registros válidos en el archivo", "error")
+                return redirect(url_for("upload.index"))
+
+            # Convertir a lista de diccionarios para Jinja
+            registros_list = registros.to_dict(orient="records")
+
+            return render_template("preview.html", registros=registros_list)
+
+        except Exception as e:
+            flash(f"Error al procesar el archivo: {e}", "error")
+            return redirect(url_for("upload.index"))
+
+    return render_template("index.html")
+
+# Procesar pagos seleccionados
+@upload_bp.route("/procesar", methods=["POST"])
+def procesar():
     try:
-        # Procesar el Excel a DataFrame
-        df = procesar_excel(filepath)
+        seleccionados = request.form.getlist("seleccionados")
 
-        # Obtener la colección de MongoDB
-        db = get_mongo_db()
-        payments_collection = db["PAYMENTS"]
+        if not seleccionados:
+            flash("No seleccionaste ningún registro", "error")
+            return redirect(url_for("upload.index"))
 
-        # Convertir DataFrame a lista de diccionarios
-        documentos = df.to_dict(orient='records')
-        documentos_nuevos = []
-        transacciones_duplicadas = []
+        resultados = []
+        exitosos = 0
+        errores = 0
 
-        for doc in documentos:
-            transaccion = doc.get("transacción") or doc.get("Transacción")
-            if transaccion and not payments_collection.find_one({"transacción": transaccion}):
-                documentos_nuevos.append(doc)
-            else:
-                transacciones_duplicadas.append(transaccion)
+        for seleccionado in seleccionados:
+            try:
+                datos = seleccionado.split("|")
+                if len(datos) != 5:
+                    resultados.append({
+                        "idcliente": "",
+                        "status": "SKIPPED",
+                        "mensaje": "Formato de registro incorrecto"
+                    })
+                    errores += 1
+                    continue
 
-        # Insertar los documentos nuevos
-        if documentos_nuevos:
-            payments_collection.insert_many(documentos_nuevos)
+                row = {
+                    "idcliente": datos[0].strip(),
+                    "telefono": datos[1].strip(),
+                    "transaccion": datos[2].strip(),
+                    "monto": datos[3].strip(),
+                    "fecha_pago": datos[4].strip()
+                }
 
-        # Crear resumen
-        resumen = {
-            "insertados": len(documentos_nuevos),
-            "duplicados": len(transacciones_duplicadas)
-        }
+                if not row["idcliente"] or float(row["monto"]) <= 0:
+                    resultados.append({
+                        "idcliente": row["idcliente"],
+                        "status": "SKIPPED",
+                        "mensaje": "Registro inválido: cliente o monto vacío"
+                    })
+                    errores += 1
+                    continue
 
-        # Enviar pagos y mostrar todo
-        resultados = [enviar_pago(row) for _, row in df.iterrows()]
-        return render_template('index.html',
-                               preview=df.to_dict(orient='records'),
-                               resultados=resultados,
-                               resumen=resumen)
+                resultado = enviar_pago(row)
+                resultados.append(resultado)
+
+                if resultado["status"] == 200:
+                    exitosos += 1
+                else:
+                    errores += 1
+
+            except Exception as e_fila:
+                resultados.append({
+                    "idcliente": "",
+                    "status": "ERROR",
+                    "mensaje": f"Error procesando fila: {str(e_fila)}"
+                })
+                errores += 1
+
+        resumen = {"insertados": exitosos, "errores": errores}
+        return render_template("index.html", resultados=resultados, resumen=resumen)
 
     except Exception as e:
-        flash(f"Error al procesar el archivo: {e}")
-        return redirect('/')
+        flash(f"Error general al procesar pagos: {e}", "error")
+        return redirect(url_for("upload.index"))
