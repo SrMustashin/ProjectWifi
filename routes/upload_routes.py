@@ -100,7 +100,8 @@ def procesar():
                 errores += 1
 
         resumen = {"insertados": exitosos, "errores": errores}
-        return render_template("index.html", resultados=resultados, resumen=resumen)
+        # Renderizar en results.html
+        return render_template("results.html", resultados=resultados, resumen=resumen)
 
     except Exception as e:
         flash(f"Error general al procesar pagos: {e}", "error")

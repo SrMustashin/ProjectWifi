@@ -3,44 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados de Pagos</title>
+    <title>Resultados de Pagos - iWisp</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#0ea5e9',
+                        accent: '#10b981',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col items-center p-4">
 
-    <header class="w-full max-w-6xl text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">Resultados del Registro de Pagos</h1>
-        <p class="text-gray-500 mt-2">Consulta los estados de cada transacción</p>
+    <!-- Header -->
+    <header class="w-full max-w-6xl text-center mb-10 py-8">
+        <div class="flex items-center justify-center mb-4">
+            <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-3">
+                <i class="fas fa-wifi text-white text-xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-dark">iWisp Manager</h1>
+        </div>
+        <p class="text-gray-600 text-lg">Resultados del procesamiento</p>
     </header>
 
-    {% if resultados %}
-    <div class="w-full max-w-6xl bg-white p-6 rounded shadow-md mb-8 overflow-x-auto">
-        <table class="w-full border border-gray-200 text-left text-sm">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="p-2 border">ID Cliente</th>
-                    <th class="p-2 border">Status</th>
-                    <th class="p-2 border">Mensaje</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in resultados %}
-                <tr class="hover:bg-gray-50">
-                    <td class="p-2 border">{{ r.idcliente }}</td>
-                    <td class="p-2 border font-medium {{ 'text-green-600' if r.status==200 else 'text-red-600' }}">{{ r.status }}</td>
-                    <td class="p-2 border">{{ r.respuesta }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-        <p class="text-gray-600">No hay resultados disponibles.</p>
-    {% endif %}
+    <!-- Main Content Card -->
+    <main class="w-full max-w-6xl bg-white rounded-xl card-shadow overflow-hidden mb-10">
+        <!-- Card Header -->
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h2 class="text-2xl font-semibold flex items-center">
+                <i class="fas fa-clipboard-list mr-3"></i> Resultados del Registro de Pagos
+            </h2>
+            <p class="mt-2 opacity-90">Consulta los estados de cada transacción</p>
+        </div>
 
-    <footer class="w-full max-w-6xl text-center py-6 text-gray-500 mt-auto">
-        &copy; 2025 iWisp Manager. Todos los derechos reservados.
+        <!-- Results Content -->
+        <div class="p-6">
+            {% if resultados %}
+            <div class="overflow-x-auto rounded-lg border border-gray-200 mb-8">
+                <table class="w-full text-sm text-left text-gray-700">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th class="p-3">ID Cliente</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Mensaje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resultados %}
+                        <tr class="bg-white border-b hover:bg-gray-50 transition">
+                            <td class="p-3 font-medium text-gray-900">{{ r.idcliente }}</td>
+                            <td class="p-3 font-medium {{ 'text-green-600' if r.status==200 else 'text-red-600' }}">
+                                <span class="inline-flex items-center">
+                                    {% if r.status==200 %}
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    {% else %}
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {% endif %}
+                                    {{ r.status }}
+                                </span>
+                            </td>
+                            <td class="p-3">{{ r.mensaje }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Section -->
+            {% if resumen %}
+            <div class="bg-gray-50 p-5 rounded-lg mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">Resumen del procesamiento</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-green-50 p-5 rounded-lg text-center border border-green-100">
+                        <div class="text-4xl font-bold text-green-600 mb-2">{{ resumen.insertados }}</div>
+                        <p class="text-green-700 font-medium">Pagos exitosos</p>
+                        <div class="mt-3">
+                            <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 p-5 rounded-lg text-center border border-red-100">
+                        <div class="text-4xl font-bold text-red-600 mb-2">{{ resumen.errores }}</div>
+                        <p class="text-red-700 font-medium">Pagos con error</p>
+                        <div class="mt-3">
+                            <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="text-center">
+                <a href="{{ url_for('upload.index') }}" class="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Volver al inicio
+                </a>
+            </div>
+            {% else %}
+            <div class="text-center py-10">
+                <i class="fas fa-info-circle text-5xl text-gray-300 mb-4"></i>
+                <p class="text-gray-600 text-lg">No hay resultados disponibles.</p>
+                <a href="{{ url_for('upload.index') }}" class="mt-4 inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Volver al inicio
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl text-center py-6 text-gray-500 mt-8 border-t border-gray-200">
+        <p>&copy; 2025 iWisp Manager. Todos los derechos reservados.</p>
+        <p class="text-sm mt-2 text-gray-400">Sistema seguro de procesamiento de pagos</p>
     </footer>
-
 </body>
 </html>

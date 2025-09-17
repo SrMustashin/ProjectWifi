@@ -3,55 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vista Previa de Pagos</title>
+    <title>Vista Previa de Pagos - iWisp</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#0ea5e9',
+                        accent: '#10b981',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col items-center p-4">
 
-    <header class="w-full max-w-6xl text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">Vista Previa de Pagos</h1>
-        <p class="text-gray-500 mt-2">Selecciona los registros que deseas procesar</p>
+    <!-- Header -->
+    <header class="w-full max-w-6xl text-center mb-10 py-8">
+        <div class="flex items-center justify-center mb-4">
+            <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-3">
+                <i class="fas fa-wifi text-white text-xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-dark">iWisp Manager</h1>
+        </div>
+        <p class="text-gray-600 text-lg">Vista previa de pagos</p>
     </header>
 
-    {% if registros %}
-    <form action="{{ url_for('upload.procesar') }}" method="POST" class="w-full max-w-6xl bg-white p-6 rounded shadow-md mb-8 overflow-x-auto">
-        <table class="w-full border border-gray-200 text-left text-sm">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="p-2 border">Seleccionar</th>
-                    <th class="p-2 border">ID Cliente</th>
-                    <th class="p-2 border">Teléfono</th>
-                    <th class="p-2 border">Transacción</th>
-                    <th class="p-2 border">Monto</th>
-                    <th class="p-2 border">Fecha Pago</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr class="hover:bg-gray-50">
-                    <td class="p-2 border text-center">
-                        <input type="checkbox" name="seleccionados" value="{{ r.idcliente }}|{{ r.telefono }}|{{ r.transaccion }}|{{ r.monto }}|{{ r.fecha_pago }}" class="w-4 h-4">
-                    </td>
-                    <td class="p-2 border">{{ r.idcliente }}</td>
-                    <td class="p-2 border">{{ r.telefono }}</td>
-                    <td class="p-2 border">{{ r.transaccion }}</td>
-                    <td class="p-2 border">{{ r.monto }}</td>
-                    <td class="p-2 border">{{ r.fecha_pago }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="mt-4 text-center">
-            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">Registrar Pagos Seleccionados</button>
+    <!-- Main Content Card -->
+    <main class="w-full max-w-6xl bg-white rounded-xl card-shadow overflow-hidden mb-10">
+        <!-- Card Header -->
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+            <h2 class="text-2xl font-semibold flex items-center">
+                <i class="fas fa-eye mr-3"></i> Vista Previa de Pagos
+            </h2>
+            <p class="mt-2 opacity-90">Selecciona los registros que deseas procesar</p>
         </div>
-    </form>
-    {% else %}
-        <p class="text-gray-600">No se encontraron registros válidos en el archivo.</p>
-    {% endif %}
 
-    <footer class="w-full max-w-6xl text-center py-6 text-gray-500 mt-auto">
-        &copy; 2025 iWisp Manager. Todos los derechos reservados.
+        <!-- Preview Content -->
+        <div class="p-6">
+            {% if registros %}
+            <form action="{{ url_for('upload.procesar') }}" method="POST">
+                <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                    <table class="w-full text-sm text-left text-gray-700">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <th class="p-3 text-center">Seleccionar</th>
+                                <th class="p-3">ID Cliente</th>
+                                <th class="p-3">Teléfono</th>
+                                <th class="p-3">Transacción</th>
+                                <th class="p-3">Monto</th>
+                                <th class="p-3">Fecha Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in registros %}
+                            <tr class="bg-white border-b hover:bg-gray-50 transition">
+                                <td class="p-3 text-center">
+                                    <input type="checkbox" name="seleccionados" value="{{ r.idcliente }}|{{ r.telefono }}|{{ r.transaccion }}|{{ r.monto }}|{{ r.fecha_pago }}" class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary">
+                                </td>
+                                <td class="p-3 font-medium text-gray-900">{{ r.idcliente }}</td>
+                                <td class="p-3">{{ r.telefono }}</td>
+                                <td class="p-3">{{ r.transaccion }}</td>
+                                <td class="p-3">${{ r.monto }}</td>
+                                <td class="p-3">{{ r.fecha_pago }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="bg-accent text-white px-6 py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center mx-auto">
+                        <i class="fas fa-check-circle mr-2"></i> Registrar Pagos Seleccionados
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="text-center py-10">
+                <i class="fas fa-file-excel text-5xl text-gray-300 mb-4"></i>
+                <p class="text-gray-600 text-lg">No se encontraron registros válidos en el archivo.</p>
+                <a href="{{ url_for('upload.index') }}" class="mt-4 inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Volver al inicio
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl text-center py-6 text-gray-500 mt-8 border-t border-gray-200">
+        <p>&copy; 2025 iWisp Manager. Todos los derechos reservados.</p>
+        <p class="text-sm mt-2 text-gray-400">Sistema seguro de procesamiento de pagos</p>
     </footer>
-
 </body>
 </html>
